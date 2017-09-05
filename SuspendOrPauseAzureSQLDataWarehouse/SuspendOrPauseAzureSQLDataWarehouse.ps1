@@ -16,14 +16,14 @@ workflow SuspendOrPauseAzureSQLDataWarehouse
                 (
                     select
                     (select @@version) version_number
-                    ,(select count(*) from sys.dm_pdw_exec_requests where status in ('Running', 'Pending', 'CancelSubmitted')) active_query_count
+                    ,(select count(*) from sys.dm_pdw_exec_requests where status in ('Running', 'Pending', 'CancelSubmitted') and session_id != SESSION_ID()) active_query_count
                     ,(select count(*) from sys.dm_pdw_exec_sessions where is_transactional = 1) as session_transactional_count
                     ,(select count(*) from sys.dm_pdw_waits where type = 'Exclusive') as pdw_waits
                 )
                 select
                     case when
                             version_number like 'Microsoft Azure SQL Data Warehouse%'
-                            and active_query_count = 1
+                            and active_query_count = 0
                             and session_transactional_count = 0
                             and pdw_waits = 0
                             then 1
@@ -36,7 +36,7 @@ workflow SuspendOrPauseAzureSQLDataWarehouse
                 $DBCommand = New-Object System.Data.SqlClient.SqlCommand($testquery, $DBConnection)
                 $DBAdapter = New-Object -TypeName System.Data.SqlClient.SqlDataAdapter
                 $DBDataSet = New-Object -TypeName System.Data.DataSet
-                $DBAdapter.SelectCommand = $DBCommandVersion
+                $DBAdapter.SelectCommand = $DBCommand
                 $DBAdapter.Fill($DBDataSet) | Out-Null
                 # Returning result to CanPause
                 if ($DBDataSet.Tables[0].Rows[0].Column1) {$true} else {$false}
