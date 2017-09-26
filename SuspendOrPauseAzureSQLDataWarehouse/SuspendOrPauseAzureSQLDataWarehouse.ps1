@@ -21,9 +21,11 @@ workflow SuspendOrPauseAzureSQLDataWarehouse
         do {
             if ($cRetry -ne 0) {Start-Sleep -Seconds $RetryTime}
             $DWStatus = (Get-AzureRmSqlDatabase -ResourceGroup $DWDetail[4] -ServerName $DWDetail[8] -DatabaseName $DWDetail[10]).Status
+            Write-Verbose "Test $cRetry status is $DWStatus looking for Online"
             $cRetry++
         } while ($DWStatus -ne "Online" -and $cRetry -le $RetryCount )
         if ($DWStatus -eq "Online") {
+            Write-Verbose "Querying data warehouse for activity"
             $CanPause = InLineScript {
                 $testquery = @"
                 with test as 
@@ -55,7 +57,9 @@ workflow SuspendOrPauseAzureSQLDataWarehouse
                 # Returning result to CanPause
                 if ($DBDataSet.Tables[0].Rows[0].CanPause) {$true} else {$false}
             }
+            Write-Verbose "Activity request is $CanPause"
             if ($CanPause) {
+                Write-Verbose "Calling suspend/pause"
                 Get-AzureRmSqlDatabase -ResourceGroup $DWDetail[4] -ServerName $DWDetail[8] -DatabaseName $DWDetail[10] | Suspend-AzureRmSqlDatabase
             } else {
                 Write-Error "Azure SQL Data Warehouse $DWName on server $ServerName has outstanding request and will not be paused at this time."

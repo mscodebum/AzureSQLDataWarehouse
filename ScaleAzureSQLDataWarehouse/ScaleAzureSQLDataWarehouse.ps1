@@ -33,14 +33,14 @@ workflow ScaleAzureSQLDataWarehouse {
     do {
         if ($cRetry -ne 0) {Start-Sleep -Seconds $RetryTime}
         $DWStatus = (Get-AzureRmSqlDatabase -ResourceGroup $DWDetail[4] -ServerName $DWDetail[8] -DatabaseName $DWDetail[10]).Status
-        "$DWStatus in testing if online"
+        Write-Verbose "Test $cRetry status is $DWStatus looking for Online"
         $cRetry++
     } while ($DWStatus -ne "Online" -and $cRetry -le $RetryCount )
     if ($DWStatus -eq "Online") {
         $DWSON = (Get-AzureRmSqlDatabase -ResourceGroup $DWDetail[4] -ServerName $ServerName.Split(".")[0] -DatabaseName $DWDetail[10]).CurrentServiceObjectiveName
-        $DWSON
+        Write-Verbose "Requested SLO is $RequestedServiceObjectiveName current SLO is $DWSON"
         if ($DWSON -ne $RequestedServiceObjectiveName) {
-            "Calling Scale"
+            Write-Verbose "Calling Scale"
             Set-AzureRmSqlDatabase -ResourceGroup $DWDetail[4] -ServerName $ServerName.Split(".")[0] -DatabaseName $DWDetail[10] -RequestedServiceObjectiveName $RequestedServiceObjectiveName -ErrorAction SilentlyContinue
         }
     }
@@ -49,6 +49,7 @@ workflow ScaleAzureSQLDataWarehouse {
     do {
         if ($cRetry -ne 0) {Start-Sleep -Seconds $RetryTime}
         $DWStatus = (Get-AzureRmSqlDatabase -ResourceGroup $DWDetail[4] -ServerName $DWDetail[8] -DatabaseName $DWDetail[10]).Status
+        Write-Verbose "Test $cRetry status is $DWStatus looking for Online"
         $cRetry++
     } while ($DWStatus -ne "Online" -and $cRetry -le $RetryCount )
     if ($DWStatus -ne "Online") {

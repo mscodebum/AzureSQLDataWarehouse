@@ -16,9 +16,11 @@ workflow ResumeAzureSQLDataWarehouse {
         do {
             if ($cRetry -ne 0) {Start-Sleep -Seconds $RetryTime}
             $DWStatus = (Get-AzureRmSqlDatabase -ResourceGroup $DWDetail[4] -ServerName $DWDetail[8] -DatabaseName $DWDetail[10]).Status
+            Write-Verbose "Test $cRetry status is $DWStatus looking for Paused"
             $cRetry++
         } while ($DWStatus -ne "Paused" -and $cRetry -le $RetryCount)
         if ($DWStatus -eq "Paused") {
+            Write-Verbose "Calling resume"
             Get-AzureRmSqlDatabase -ResourceGroup $DWDetail[4] -ServerName $ServerName.Split(".")[0] -DatabaseName $DWDetail[10] | Resume-AzureRmSqlDatabase
         }
         $cRetry = 0
@@ -26,6 +28,7 @@ workflow ResumeAzureSQLDataWarehouse {
         do {
             if ($cRetry -ne 0) {Start-Sleep -Seconds $RetryTime}
             $DWStatus = (Get-AzureRmSqlDatabase -ResourceGroup $DWDetail[4] -ServerName $DWDetail[8] -DatabaseName $DWDetail[10]).Status
+            Write-Verbose "Test $cRetry status is $DWStatus looking for Online"
             $cRetry++
         } while ($DWStatus -ne "Online" -and $cRetry -le $RetryCount)
         if ($DWStatus -ne "Online") {
