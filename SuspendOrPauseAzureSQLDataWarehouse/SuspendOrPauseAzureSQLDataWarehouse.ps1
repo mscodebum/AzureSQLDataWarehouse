@@ -39,7 +39,7 @@ workflow SuspendOrPauseAzureSQLDataWarehouse
                 $DBAdapter.SelectCommand = $DBCommand
                 $DBAdapter.Fill($DBDataSet) | Out-Null
                 # Returning result to CanPause
-                if ($DBDataSet.Tables[0].Rows[0].Column1) {$true} else {$false}
+                if ($DBDataSet.Tables[0].Rows[0].CanPause) {$true} else {$false}
         }
         if ($CanPause) {
             $AutomationConnection=Get-AutomationConnection -Name $ConnectionName
