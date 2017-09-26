@@ -4,13 +4,27 @@ workflow SuspendOrPauseAzureSQLDataWarehouse
         $ConnectionName = "AzureRunAsConnection",
         [string]$SQLActionAccountName,
         [string]$ServerName,
-        [string]$DWName
+        [string]$DWName,
+        [int]$RetryCount = 4,
+        [int]$RetryTime = 15
     )
+        #Pulling in credentials used in the process
         $credSQL = Get-AutomationPSCredential -Name $SQLActionAccountName
+        $AutomationConnection = Get-AutomationConnection -Name $ConnectionName
+        $null = Add-AzureRmAccount -ServicePrincipal -TenantId $AutomationConnection.TenantId -ApplicationId $AutomationConnection.ApplicationId -CertificateThumbprint $AutomationConnection.CertificateThumbprint
+        $DWDetail = (Get-AzureRmResource | Where-Object {$_.Kind -like "*datawarehouse*" -and $_.Name -like "*/$DWName"}).ResourceId.Split("/")
         $SQLUser = $credSQL.Username
         $SQLPass = $credSQL.GetNetworkCredential().Password
 
-        $CanPause = InLineScript {
+        #Checking to see if the ADW exists and is online
+        $cRetry = 0
+        do {
+            if ($cRetry -ne 0) {Start-Sleep -Seconds $RetryTime}
+            $DWStatus = (Get-AzureRmSqlDatabase -ResourceGroup $DWDetail[4] -ServerName $DWDetail[8] -DatabaseName $DWDetail[10]).Status
+            $cRetry++
+        } while ($DWStatus -ne "Online" -and $cRetry -le $RetryCount )
+        if ($DWStatus -eq "Online") {
+            $CanPause = InLineScript {
                 $testquery = @"
                 with test as 
                 (
@@ -39,15 +53,12 @@ workflow SuspendOrPauseAzureSQLDataWarehouse
                 $DBAdapter.SelectCommand = $DBCommand
                 $DBAdapter.Fill($DBDataSet) | Out-Null
                 # Returning result to CanPause
-                if ($DBDataSet.Tables[0].Rows[0].Column1) {$true} else {$false}
+                if ($DBDataSet.Tables[0].Rows[0].CanPause) {$true} else {$false}
+            }
+            if ($CanPause) {
+                Get-AzureRmSqlDatabase -ResourceGroup $DWDetail[4] -ServerName $DWDetail[8] -DatabaseName $DWDetail[10] | Suspend-AzureRmSqlDatabase
+            } else {
+                Write-Error "Azure SQL Data Warehouse $DWName on server $ServerName has outstanding request and will not be paused at this time."
+            }
         }
-        if ($CanPause) {
-            $AutomationConnection=Get-AutomationConnection -Name $ConnectionName
-            $null=Add-AzureRmAccount -ServicePrincipal -TenantId $AutomationConnection.TenantId -ApplicationId $AutomationConnection.ApplicationId -CertificateThumbprint $AutomationConnection.CertificateThumbprint
-            $DWDetail = (Get-AzureRmResource | Where-Object {$_.Kind -like "*datawarehouse*" -and $_.Name -like "*/$DWName"}).ResourceId.Split("/")
-            Get-AzureRmSqlDatabase -ResourceGroup $DWDetail[4] -ServerName $DWDetail[8] -DatabaseName $DWDetail[10] | Suspend-AzureRmSqlDatabase
-        } else {
-            Write-Error "Azure SQL Data Warehouse $DWName on server $ServerName has outstanding request and will not be paused at this time."
-        }
-
 }
