@@ -34,7 +34,7 @@ workflow RefreshReplicatedTable
             Write-Verbose "Refreshing Replicated Tables"
             InLineScript {
                 $ReplicatedTablesQuery = @"
-                SELECT [ReplicatedTable] = t.[name]
+                SELECT [ReplicatedTable] = quotename(schema_name(t.schema_id)) + '.' + quotename(t.[name])
                 FROM sys.tables t  
                 JOIN sys.pdw_replicated_table_cache_state c  
                   ON c.object_id = t.object_id 
