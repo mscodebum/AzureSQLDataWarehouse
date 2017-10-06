@@ -97,7 +97,7 @@ workflow ScaleAzureSQLDataWarehouse {
         } while ($DWStatus -ne "Online" -and $cRetry -le $RetryCount )
         if ($DWStatus -eq "Online") {
             #Call RefreshReplicatedTables
-            #RefreshReplicatedTables -SQLActionAccountName $SQLActionAccountName -ServerName $ServerName -DWName $DWName
+            #RefreshReplicatedTable -SQLActionAccountName $SQLActionAccountName -ServerName $ServerName -DWName $DWName
         }
         else{
             Write-Error "Scale operation submitted. Operation did not complete timely."

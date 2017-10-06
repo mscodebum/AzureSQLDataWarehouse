@@ -41,7 +41,7 @@ workflow ResumeAzureSQLDataWarehouse {
             } while ($DWStatus -ne "Online" -and $cRetry -le $RetryCount)
             if ($DWStatus -eq "Online") {
                 #Call RefreshReplicatedTables
-                #RefreshReplicatedTables -SQLActionAccountName $RefreshSqlAccount -ServerName $ServerName -DWName $DWName
+                #RefreshReplicatedTable -SQLActionAccountName $RefreshSqlAccount -ServerName $ServerName -DWName $DWName
             }
             else {
                 Write-Error "Resume operation submitted. Operation did not complete timely."
