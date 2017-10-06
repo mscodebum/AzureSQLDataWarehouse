@@ -1,10 +1,16 @@
 workflow ResumeAzureSQLDataWarehouse {
+    [CmdletBinding()]
     Param(
-        $ConnectionName = "AzureRunAsConnection",
+        [Parameter(Mandatory=$true)]
+        [string]$ConnectionName = "AzureRunAsConnection",
+        [Parameter(Mandatory=$true,
+        HelpMessage="ServerName must be the fully qualified name.")]
         [string]$ServerName,
+        [Parameter(Mandatory=$true)]
         [string]$DWName,
         [int]$RetryCount = 5,
-        [int]$RetryTime = 15  
+        [int]$RetryTime = 15,
+        [string]$RebuildSqlAccount
     )
 
     $AutomationConnection = Get-AutomationConnection -Name $ConnectionName
@@ -33,7 +39,11 @@ workflow ResumeAzureSQLDataWarehouse {
                 Write-Verbose "Test $cRetry status is $DWStatus looking for Online"
                 $cRetry++
             } while ($DWStatus -ne "Online" -and $cRetry -le $RetryCount)
-            if ($DWStatus -ne "Online") {
+            if ($DWStatus -eq "Online") {
+                #Call RebuildReplicatedTables
+                #RebuildReplicatedTables -SQLActionAccountName $RebuildSqlAccount -ServerName $ServerName -DWName $DWName
+            }
+            else {
                 Write-Error "Resume operation submitted. Operation did not complete timely."
             }
         }

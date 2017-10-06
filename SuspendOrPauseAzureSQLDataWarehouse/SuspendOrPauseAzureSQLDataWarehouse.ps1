@@ -1,9 +1,14 @@
 workflow SuspendOrPauseAzureSQLDataWarehouse
 {
     Param(
-        $ConnectionName = "AzureRunAsConnection",
+        [Parameter(Mandatory=$true)]
+        [string]$ConnectionName = "AzureRunAsConnection",
+        [Parameter(Mandatory=$true)]
         [string]$SQLActionAccountName,
+        [Parameter(Mandatory=$true,
+        HelpMessage="ServerName must be the fully qualified name.")]
         [string]$ServerName,
+        [Parameter(Mandatory=$true)]
         [string]$DWName,
         [int]$RetryCount = 4,
         [int]$RetryTime = 15

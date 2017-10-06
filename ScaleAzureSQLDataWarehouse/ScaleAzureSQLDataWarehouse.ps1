@@ -1,6 +1,7 @@
 workflow ScaleAzureSQLDataWarehouse {
     Param(
-        $ConnectionName = "AzureRunAsConnection",
+        [Parameter(Mandatory=$true)]
+        [string]$ConnectionName = "AzureRunAsConnection",
         [parameter(Mandatory=$true)]
         [string]$SQLActionAccountName,
         [parameter(Mandatory=$true)]
@@ -94,7 +95,11 @@ workflow ScaleAzureSQLDataWarehouse {
             Write-Verbose "Test $cRetry status is $DWStatus looking for Online"
             $cRetry++
         } while ($DWStatus -ne "Online" -and $cRetry -le $RetryCount )
-        if ($DWStatus -ne "Online") {
+        if ($DWStatus -eq "Online") {
+            #Call RebuildReplicatedTables
+            #RebuildReplicatedTables -SQLActionAccountName $SQLActionAccountName -ServerName $ServerName -DWName $DWName
+        }
+        else{
             Write-Error "Scale operation submitted. Operation did not complete timely."
         }
     }

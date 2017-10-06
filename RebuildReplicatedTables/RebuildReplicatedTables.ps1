@@ -1,9 +1,14 @@
 workflow RebuildReplicatedTables
 {
     Param(
+        [Parameter(Mandatory=$true)]
         $ConnectionName = "AzureRunAsConnection",
+        [Parameter(Mandatory=$true)]
         [string]$SQLActionAccountName,
+        [Parameter(Mandatory=$true,
+        HelpMessage="ServerName must be the fully qualified name.")]
         [string]$ServerName,
+        [Parameter(Mandatory=$true)]
         [string]$DWName,
         [int]$RetryCount = 4,
         [int]$RetryTime = 15
@@ -47,4 +52,5 @@ workflow RebuildReplicatedTables
                 try{$DBConnection.Close()} catch {}
             }
         }
+    }
 }
