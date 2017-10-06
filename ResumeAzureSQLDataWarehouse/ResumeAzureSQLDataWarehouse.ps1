@@ -10,7 +10,7 @@ workflow ResumeAzureSQLDataWarehouse {
         [string]$DWName,
         [int]$RetryCount = 5,
         [int]$RetryTime = 15,
-        [string]$RebuildSqlAccount
+        [string]$RefreshSqlAccount
     )
 
     $AutomationConnection = Get-AutomationConnection -Name $ConnectionName
@@ -40,8 +40,8 @@ workflow ResumeAzureSQLDataWarehouse {
                 $cRetry++
             } while ($DWStatus -ne "Online" -and $cRetry -le $RetryCount)
             if ($DWStatus -eq "Online") {
-                #Call RebuildReplicatedTables
-                #RebuildReplicatedTables -SQLActionAccountName $RebuildSqlAccount -ServerName $ServerName -DWName $DWName
+                #Call RefreshReplicatedTables
+                #RefreshReplicatedTables -SQLActionAccountName $RefreshSqlAccount -ServerName $ServerName -DWName $DWName
             }
             else {
                 Write-Error "Resume operation submitted. Operation did not complete timely."

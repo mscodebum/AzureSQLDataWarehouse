@@ -1,1 +1,0 @@
-# Rebuild Replicated Tables in a Azure SQL Data Warehouse

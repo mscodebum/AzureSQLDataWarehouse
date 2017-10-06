@@ -1,4 +1,4 @@
-workflow RebuildReplicatedTables
+workflow RefreshReplicatedTable
 {
     Param(
         [Parameter(Mandatory=$true)]
@@ -31,9 +31,18 @@ workflow RebuildReplicatedTables
             $cRetry++
         } while ($DWStatus -ne "Online" -and $cRetry -le $RetryCount )
         if ($DWStatus -eq "Online") {
-            Write-Verbose "Rebuilding Replicated Tables"
+            Write-Verbose "Refreshing Replicated Tables"
             InLineScript {
-                $ReplicatedTablesQuery = "select object_id from sys.pdw_table_distribution_properties where distribution_policy = 3"
+                $ReplicatedTablesQuery = @"
+                SELECT [ReplicatedTable] = t.[name]
+                FROM sys.tables t  
+                JOIN sys.pdw_replicated_table_cache_state c  
+                  ON c.object_id = t.object_id 
+                JOIN sys.pdw_table_distribution_properties p 
+                  ON p.object_id = t.object_id 
+                WHERE c.[state] = 'NotReady'
+                  AND p.[distribution_policy_desc] = 'REPLICATE'
+"@
                 $DBConnection = New-Object System.Data.SqlClient.SqlConnection("Server=$($Using:ServerName); Database=$($Using:DWName);User ID=$($Using:SQLUser);Password=$($Using:SQLPass);")
                 $DBConnection.Open()
                 $DBCommand = New-Object System.Data.SqlClient.SqlCommand($ReplicatedTablesQuery, $DBConnection)
@@ -42,11 +51,11 @@ workflow RebuildReplicatedTables
                 $DBAdapter.SelectCommand = $DBCommand
                 $DBAdapter.Fill($ReplicatedDataSet) | Out-Null
                 if ($ReplicatedDataSet.Tables[0].Rows.Count -gt 0) {
-                    $RebuildQuery = ""
-                    foreach ($ReplicatedTableId in $ReplicatedDataSet.Tables[0].Rows.object_id) {
-                        $RebuildQuery += "SELECT TOP 1 * FROM object_name($($ReplicatedTableId))`r`n"
+                    $RefreshQuery = ""
+                    foreach ($ReplicatedTableName in $ReplicatedDataSet.Tables[0].Rows.ReplicatedTable) {
+                        $RefreshQuery += "SELECT TOP 1 * FROM $ReplicatedTableName`r`n"
                     }
-                    $DBCommand = New-Object System.Data.SqlClient.SqlCommand($RebuildQuery, $DBConnection)
+                    $DBCommand = New-Object System.Data.SqlClient.SqlCommand($RefreshQuery, $DBConnection)
                     $DBAdapter.SelectCommand = $DBCommand
                 }
                 try{$DBConnection.Close()} catch {}
