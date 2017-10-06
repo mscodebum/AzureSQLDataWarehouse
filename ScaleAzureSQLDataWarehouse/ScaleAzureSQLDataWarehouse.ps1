@@ -77,6 +77,7 @@ workflow ScaleAzureSQLDataWarehouse {
                     $DBAdapter.Fill($DBDataSet) | Out-Null
                     # Returning result to CanScale
                     if ($DBDataSet.Tables[0].Rows[0].CanScale) {$true} else {$false}
+                    try{$DBConnection.Close()} catch {}
                 }
                 If ($CanScale) {
                     Write-Verbose "Calling Scale"

@@ -44,6 +44,7 @@ workflow RebuildReplicatedTables
                     $DBCommand = New-Object System.Data.SqlClient.SqlCommand($RebuildQuery, $DBConnection)
                     $DBAdapter.SelectCommand = $DBCommand
                 }
+                try{$DBConnection.Close()} catch {}
             }
         }
 }

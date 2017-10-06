@@ -58,6 +58,7 @@ workflow SuspendOrPauseAzureSQLDataWarehouse
                     $DBAdapter.Fill($DBDataSet) | Out-Null
                     # Returning result to CanPause
                     if ($DBDataSet.Tables[0].Rows[0].CanPause) {$true} else {$false}
+                    try{$DBConnection.Close()} catch {}
                 }
                 Write-Verbose "Activity request is $CanPause"
                 if ($CanPause) {
