@@ -53,7 +53,7 @@ workflow RefreshReplicatedTable
                 if ($ReplicatedDataSet.Tables[0].Rows.Count -gt 0) {
                     $RefreshQuery = ""
                     foreach ($ReplicatedTableName in $ReplicatedDataSet.Tables[0].Rows.ReplicatedTable) {
-                        $RefreshQuery += "SELECT TOP 1 * FROM $ReplicatedTableName`r`n"
+                        $RefreshQuery += "SELECT TOP 1 * FROM [$ReplicatedTableName]`r`n"
                     }
                     $DBCommand = New-Object System.Data.SqlClient.SqlCommand($RefreshQuery, $DBConnection)
                     $DBAdapter.SelectCommand = $DBCommand
