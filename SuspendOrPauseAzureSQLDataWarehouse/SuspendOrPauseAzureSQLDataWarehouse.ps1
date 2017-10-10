@@ -18,7 +18,7 @@ workflow SuspendOrPauseAzureSQLDataWarehouse
         $AutomationConnection = Get-AutomationConnection -Name $ConnectionName
         $null = Add-AzureRmAccount -ServicePrincipal -TenantId $AutomationConnection.TenantId -ApplicationId $AutomationConnection.ApplicationId -CertificateThumbprint $AutomationConnection.CertificateThumbprint
         $DWDetail = (Get-AzureRmResource | Where-Object {$_.Kind -like "*datawarehouse*" -and $_.Name -like "*/$DWName"})
-        if ($DWDetail.Count -eq 1) {
+        if ($null -ne $DWDetail) {
             $DWDetail = $DWDetail.ResourceId.Split("/")
             $SQLUser = $credSQL.Username
             $SQLPass = $credSQL.GetNetworkCredential().Password
