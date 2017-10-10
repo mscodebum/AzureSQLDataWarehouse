@@ -16,7 +16,7 @@ workflow ResumeAzureSQLDataWarehouse {
     $AutomationConnection = Get-AutomationConnection -Name $ConnectionName
     $null = Add-AzureRmAccount -ServicePrincipal -TenantId $AutomationConnection.TenantId -ApplicationId $AutomationConnection.ApplicationId -CertificateThumbprint $AutomationConnection.CertificateThumbprint
     $DWDetail = (Get-AzureRmResource | Where-Object {$_.Kind -like "*datawarehouse*" -and $_.Name -like "*/$DWName"})
-    if ($DWDetail.Count -eq 1) {
+    if ($null -ne $DWDetail) {
         $DWDetail = $DWDetail.ResourceId.Split("/")
         $cRetry = 0
         #Ensure that the ADW is Paused. Wait to ensure that if it is transitioning, the proper action is taken
