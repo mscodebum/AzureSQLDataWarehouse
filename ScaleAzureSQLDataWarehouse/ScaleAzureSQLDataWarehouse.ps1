@@ -1,6 +1,7 @@
 workflow ScaleAzureSQLDataWarehouse {
     Param(
-        $ConnectionName = "AzureRunAsConnection",
+        [Parameter(Mandatory=$true)]
+        [string]$ConnectionName = "AzureRunAsConnection",
         [parameter(Mandatory=$true)]
         [string]$SQLActionAccountName,
         [parameter(Mandatory=$true)]
@@ -33,7 +34,7 @@ workflow ScaleAzureSQLDataWarehouse {
     $SQLPass = $credSQL.GetNetworkCredential().Password
     $null = Add-AzureRmAccount -ServicePrincipal -TenantId $AutomationConnection.TenantId -ApplicationId $AutomationConnection.ApplicationId -CertificateThumbprint $AutomationConnection.CertificateThumbprint
     $DWDetail = (Get-AzureRmResource | Where-Object {$_.Kind -like "*datawarehouse*" -and $_.Name -like "*/$DWName"})
-    if ($DWDetail.Count -eq 1) {
+    if ($null -ne $DWDetail) {
         $DWDetail = $DWDetail.ResourceId.Split("/")
         $cRetry = 0
         #Ensure that the ADW is online. Wait to ensure that if it is transitioning, the proper action is taken
@@ -77,6 +78,7 @@ workflow ScaleAzureSQLDataWarehouse {
                     $DBAdapter.Fill($DBDataSet) | Out-Null
                     # Returning result to CanScale
                     if ($DBDataSet.Tables[0].Rows[0].CanScale) {$true} else {$false}
+                    try{$DBConnection.Close()} catch {}
                 }
                 If ($CanScale) {
                     Write-Verbose "Calling Scale"
@@ -93,7 +95,11 @@ workflow ScaleAzureSQLDataWarehouse {
             Write-Verbose "Test $cRetry status is $DWStatus looking for Online"
             $cRetry++
         } while ($DWStatus -ne "Online" -and $cRetry -le $RetryCount )
-        if ($DWStatus -ne "Online") {
+        if ($DWStatus -eq "Online") {
+            #Call RefreshReplicatedTables
+            #RefreshReplicatedTable -SQLActionAccountName $SQLActionAccountName -ServerName $ServerName -DWName $DWName
+        }
+        else{
             Write-Error "Scale operation submitted. Operation did not complete timely."
         }
     }

@@ -1,9 +1,14 @@
 workflow SuspendOrPauseAzureSQLDataWarehouse
 {
     Param(
-        $ConnectionName = "AzureRunAsConnection",
+        [Parameter(Mandatory=$true)]
+        [string]$ConnectionName = "AzureRunAsConnection",
+        [Parameter(Mandatory=$true)]
         [string]$SQLActionAccountName,
+        [Parameter(Mandatory=$true,
+        HelpMessage="ServerName must be the fully qualified name.")]
         [string]$ServerName,
+        [Parameter(Mandatory=$true)]
         [string]$DWName,
         [int]$RetryCount = 4,
         [int]$RetryTime = 15
@@ -13,7 +18,7 @@ workflow SuspendOrPauseAzureSQLDataWarehouse
         $AutomationConnection = Get-AutomationConnection -Name $ConnectionName
         $null = Add-AzureRmAccount -ServicePrincipal -TenantId $AutomationConnection.TenantId -ApplicationId $AutomationConnection.ApplicationId -CertificateThumbprint $AutomationConnection.CertificateThumbprint
         $DWDetail = (Get-AzureRmResource | Where-Object {$_.Kind -like "*datawarehouse*" -and $_.Name -like "*/$DWName"})
-        if ($DWDetail.Count -eq 1) {
+        if ($null -ne $DWDetail) {
             $DWDetail = $DWDetail.ResourceId.Split("/")
             $SQLUser = $credSQL.Username
             $SQLPass = $credSQL.GetNetworkCredential().Password
@@ -58,6 +63,7 @@ workflow SuspendOrPauseAzureSQLDataWarehouse
                     $DBAdapter.Fill($DBDataSet) | Out-Null
                     # Returning result to CanPause
                     if ($DBDataSet.Tables[0].Rows[0].CanPause) {$true} else {$false}
+                    try{$DBConnection.Close()} catch {}
                 }
                 Write-Verbose "Activity request is $CanPause"
                 if ($CanPause) {
